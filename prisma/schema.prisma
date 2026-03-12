@@ -1,0 +1,205 @@
+// StageTracker - Internship Search Personal CRM
+// Local-first, single user, SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// --- Enums ---
+
+enum CompanyStatus {
+  FIND_ENTRY_POINT
+  PROCESS_IN_PROGRESS
+  CLOSED
+}
+
+enum EntryPointType {
+  JOB_POSTING
+  RECRUITER
+  ALUMNI
+  REFERRAL
+  COLD_APPLICATION
+}
+
+enum EntryPointStatus {
+  TO_CONTACT
+  CONTACTED
+  RESPONDED
+  WAITING
+  FOLLOW_UP
+  CLOSED
+}
+
+enum RoleFamily {
+  APPLIED_AI
+  DATA_SCIENCE
+  SOFTWARE_ENGINEERING
+  ML_ENGINEERING
+  DATA_ENGINEERING
+  PRODUCT_TECH
+}
+
+enum ApplicationType {
+  REFERRAL
+  DIRECT_CONTACT
+  CAREERS_SITE
+  COLD_APPLICATION
+}
+
+enum ApplicationStatus {
+  PREPARATION
+  SENT
+  WAITING
+  RESPONSE_RECEIVED
+  HR_INTERVIEW
+  TECHNICAL_INTERVIEW
+  CASE_STUDY
+  FINAL
+  REJECTED
+  OFFER
+  WITHDRAWN
+}
+
+enum InterviewType {
+  HR
+  MANAGER
+  TECHNICAL
+  SYSTEM_DESIGN
+  FIT
+  FOUNDER
+  CASE_STUDY
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  FEEDBACK_RECEIVED
+}
+
+enum ActionStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELED
+}
+
+enum ActionPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// --- Models ---
+
+model Company {
+  id              String        @id @default(cuid())
+  name            String
+  companyType     String        // e.g. STARTUP, SCALEUP, CORPORATE
+  sizeEstimate    String?       // e.g. "10-50", "50-200"
+  country         String
+  city            String?
+  careersUrl      String?
+  linkedinUrl     String?
+  targetRoles     String        // JSON array or comma-separated
+  personalInterest Int          // 1-10
+  deadline        DateTime?
+  status          CompanyStatus
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  entryPoints   EntryPoint[]
+  applications  Application[]
+  interviews    Interview[]
+  actions       Action[]
+}
+
+model EntryPoint {
+  id             String           @id @default(cuid())
+  companyId      String
+  type           EntryPointType
+  personName     String?
+  personRole     String?
+  linkedinUrl    String?
+  email          String?
+  channel        String?          // e.g. LinkedIn, Email
+  status         EntryPointStatus
+  nextAction     String?
+  nextActionDate DateTime?
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
+  actions      Action[]
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  companyId       String
+  entryPointId    String?
+  roleTitle       String
+  roleFamily      RoleFamily
+  location        String?
+  offerUrl        String?
+  applicationType ApplicationType
+  appliedAt       DateTime?
+  status          ApplicationStatus
+  nextAction      String?
+  nextActionDate  DateTime?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  entryPoint EntryPoint? @relation(fields: [entryPointId], references: [id], onDelete: SetNull)
+  interviews Interview[]
+  actions    Action[]
+}
+
+model Interview {
+  id             String          @id @default(cuid())
+  companyId      String
+  applicationId  String
+  interviewType  InterviewType
+  interviewerName String?
+  scheduledAt    DateTime?
+  status         InterviewStatus
+  feedback       String?
+  strengths      String?
+  improvements   String?
+  nextStep       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actions     Action[]
+}
+
+model Action {
+  id             String         @id @default(cuid())
+  title          String
+  description    String?
+  status         ActionStatus
+  priority       ActionPriority
+  dueDate        DateTime?
+  completedAt    DateTime?
+  companyId      String?
+  entryPointId   String?
+  applicationId  String?
+  interviewId    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  company      Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  entryPoint   EntryPoint?   @relation(fields: [entryPointId], references: [id], onDelete: SetNull)
+  application  Application?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  interview    Interview?    @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+}
