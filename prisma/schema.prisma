@@ -1,4 +1,4 @@
-// StageTracker - Internship Search Personal CRM
+// InternshipTracker - Internship Search Personal CRM
 // Local-first, single user, SQLite
 
 generator client {

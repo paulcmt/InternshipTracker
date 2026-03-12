@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StageTracker — Suivi de recherche de stage",
+  title: "InternshipTracker — Suivi de recherche de stage",
   description: "Outil personnel de suivi des candidatures et entretiens",
 };
 

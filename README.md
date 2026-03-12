@@ -1,4 +1,4 @@
-# StageTracker
+# InternshipTracker
 
 Outil personnel de suivi de recherche de stage — CRM local-first pour candidatures et entretiens.
 
