@@ -21,8 +21,6 @@ import {
   ENTRY_POINT_TYPE_LABELS,
   ENTRY_POINT_STATUS_LABELS,
 } from "@/lib/utils/enums";
-import { formatDateFr } from "@/lib/utils/date";
-import { isOverdue, isUpcomingIn7Days } from "@/lib/utils/dates";
 import { deleteEntryPoint } from "@/app/entry-points/actions";
 import { useState } from "react";
 import type { EntryPointStatus, EntryPointType } from "@prisma/client";
@@ -33,8 +31,6 @@ type EntryPointWithCompany = {
   personName: string | null;
   personRole: string | null;
   status: EntryPointStatus;
-  nextAction: string | null;
-  nextActionDate: Date | null;
   company: { id: string; name: string };
 };
 
@@ -104,26 +100,16 @@ export function EntryPointsTable({
                 currentOrder={order}
                 onSort={handleSort}
               />
-              <TableHead>Prochaine action</TableHead>
-              <SortableTableHead
-                columnKey="nextActionDate"
-                label="Date"
-                currentSort={sort}
-                currentOrder={order}
-                onSort={handleSort}
-              />
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {entryPoints.map((ep) => {
-              const overdue = isOverdue(ep.nextActionDate);
-              const imminent = isUpcomingIn7Days(ep.nextActionDate);
               return (
                 <TableRow
                   key={ep.id}
                   className="cursor-pointer"
-                  onClick={() => router.push(`/companies/${ep.company.id}`)}
+                  onClick={() => router.push(`/entry-points/${ep.id}`)}
                 >
                   <TableCell className="font-medium">
                     <Link
@@ -157,26 +143,6 @@ export function EntryPointsTable({
                             : "outline"
                       }
                     />
-                  </TableCell>
-                  <TableCell>{ep.nextAction ?? "—"}</TableCell>
-                  <TableCell>
-                    {ep.nextActionDate ? (
-                      <span
-                        className={
-                          overdue
-                            ? "font-medium text-destructive"
-                            : imminent
-                              ? "font-medium text-amber-600 dark:text-amber-500"
-                              : ""
-                        }
-                      >
-                        {formatDateFr(ep.nextActionDate)}
-                        {overdue && " (en retard)"}
-                        {imminent && !overdue && " (proche)"}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1">

@@ -59,7 +59,7 @@ export async function createAction(_prev: unknown, formData: FormData) {
   revalidatePath("/dashboard");
   if (action.companyId) revalidatePath(`/companies/${action.companyId}`);
   const redirectTo = formData.get("redirectTo") as string | null;
-  if (redirectTo?.startsWith("/companies/")) {
+  if (redirectTo) {
     redirect(redirectTo);
   }
   redirect("/actions");

@@ -10,12 +10,10 @@ import {
 import type {
   ApplicationStatus,
   ApplicationType,
-  RoleFamily,
 } from "@prisma/client";
 
 function formDataToApplication(data: FormData) {
   const appliedAtVal = data.get("appliedAt") as string;
-  const nextActionDateVal = data.get("nextActionDate") as string;
   return {
     companyId: data.get("companyId") as string,
     entryPointId: (() => {
@@ -23,14 +21,11 @@ function formDataToApplication(data: FormData) {
       return v && v !== "none" ? v : undefined;
     })(),
     roleTitle: data.get("roleTitle") as string,
-    roleFamily: data.get("roleFamily") as RoleFamily,
     location: (data.get("location") as string) || undefined,
     offerUrl: (data.get("offerUrl") as string) || undefined,
     applicationType: data.get("applicationType") as ApplicationType,
     appliedAt: appliedAtVal || undefined,
     status: data.get("status") as ApplicationStatus,
-    nextAction: (data.get("nextAction") as string) || undefined,
-    nextActionDate: nextActionDateVal || undefined,
     notes: (data.get("notes") as string) || undefined,
   };
 }
@@ -44,7 +39,6 @@ export async function createApplication(_prev: unknown, formData: FormData) {
         ? raw.entryPointId
         : null,
     appliedAt: raw.appliedAt || null,
-    nextActionDate: raw.nextActionDate || null,
   };
   const parsed = applicationCreateSchema.safeParse(data);
   if (!parsed.success) {
@@ -63,7 +57,6 @@ export async function createApplication(_prev: unknown, formData: FormData) {
       ...parsed.data,
       entryPointId: parsed.data.entryPointId ?? null,
       appliedAt: parsed.data.appliedAt ?? null,
-      nextActionDate: parsed.data.nextActionDate ?? null,
     },
   });
   revalidatePath("/applications");
@@ -87,7 +80,6 @@ export async function updateApplication(_prev: unknown, formData: FormData) {
         ? null
         : raw.entryPointId,
     appliedAt: raw.appliedAt === "" ? null : raw.appliedAt,
-    nextActionDate: raw.nextActionDate === "" ? null : raw.nextActionDate,
   };
   const parsed = applicationUpdateSchema.safeParse(data);
   if (!parsed.success) {

@@ -23,6 +23,7 @@ enum EntryPointType {
   ALUMNI
   REFERRAL
   COLD_APPLICATION
+  EMPLOYEE
 }
 
 enum EntryPointStatus {
@@ -32,15 +33,6 @@ enum EntryPointStatus {
   WAITING
   FOLLOW_UP
   CLOSED
-}
-
-enum RoleFamily {
-  APPLIED_AI
-  DATA_SCIENCE
-  SOFTWARE_ENGINEERING
-  ML_ENGINEERING
-  DATA_ENGINEERING
-  PRODUCT_TECH
 }
 
 enum ApplicationType {
@@ -99,15 +91,12 @@ enum ActionPriority {
 model Company {
   id              String        @id @default(cuid())
   name            String
-  companyType     String        // e.g. STARTUP, SCALEUP, CORPORATE
   sizeEstimate    String?       // e.g. "10-50", "50-200"
   country         String
   city            String?
   careersUrl      String?
   linkedinUrl     String?
-  targetRoles     String        // JSON array or comma-separated
   personalInterest Int          // 1-10
-  deadline        DateTime?
   status          CompanyStatus
   notes           String?
   createdAt       DateTime      @default(now())
@@ -126,11 +115,8 @@ model EntryPoint {
   personName     String?
   personRole     String?
   linkedinUrl    String?
-  email          String?
   channel        String?          // e.g. LinkedIn, Email
   status         EntryPointStatus
-  nextAction     String?
-  nextActionDate DateTime?
   notes          String?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -145,14 +131,11 @@ model Application {
   companyId       String
   entryPointId    String?
   roleTitle       String
-  roleFamily      RoleFamily
   location        String?
   offerUrl        String?
   applicationType ApplicationType
   appliedAt       DateTime?
   status          ApplicationStatus
-  nextAction      String?
-  nextActionDate  DateTime?
   notes           String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt

@@ -6,7 +6,6 @@ import type {
   CompanyStatus,
   EntryPointType,
   EntryPointStatus,
-  RoleFamily,
   ApplicationType,
   ApplicationStatus,
   InterviewType,
@@ -27,6 +26,7 @@ export const ENTRY_POINT_TYPE_LABELS: Record<EntryPointType, string> = {
   ALUMNI: "Alumni",
   REFERRAL: "Recommandation",
   COLD_APPLICATION: "Candidature spontanée",
+  EMPLOYEE: "Employé",
 };
 
 export const ENTRY_POINT_STATUS_LABELS: Record<EntryPointStatus, string> = {
@@ -36,15 +36,6 @@ export const ENTRY_POINT_STATUS_LABELS: Record<EntryPointStatus, string> = {
   WAITING: "En attente",
   FOLLOW_UP: "Relance",
   CLOSED: "Clôturé",
-};
-
-export const ROLE_FAMILY_LABELS: Record<RoleFamily, string> = {
-  APPLIED_AI: "IA appliquée",
-  DATA_SCIENCE: "Data Science",
-  SOFTWARE_ENGINEERING: "Ingénierie logicielle",
-  ML_ENGINEERING: "ML Engineering",
-  DATA_ENGINEERING: "Data Engineering",
-  PRODUCT_TECH: "Product & Tech",
 };
 
 export const APPLICATION_TYPE_LABELS: Record<ApplicationType, string> = {
@@ -96,12 +87,4 @@ export const ACTION_PRIORITY_LABELS: Record<ActionPriority, string> = {
   LOW: "Basse",
   MEDIUM: "Moyenne",
   HIGH: "Haute",
-};
-
-// Company form/filter UI constants (shared)
-export const COMPANY_TYPES = ["STARTUP", "SCALEUP", "CORPORATE"] as const;
-export const COMPANY_TYPE_LABELS: Record<string, string> = {
-  STARTUP: "Startup",
-  SCALEUP: "Scale-up",
-  CORPORATE: "Grande entreprise",
 };

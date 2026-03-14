@@ -50,7 +50,7 @@ export function ActionForm({
 
   const [state, formAction] = useActionState(
     isEdit ? updateAction : createAction,
-    null
+    null,
   );
 
   const errors = (state as {
@@ -73,7 +73,7 @@ export function ActionForm({
     !!action?.interview?.companyId;
 
   const [companyId, setCompanyId] = useState<string>(
-    defaultCompanyId ?? "none"
+    defaultCompanyId ?? "none",
   );
 
   return (
@@ -81,6 +81,24 @@ export function ActionForm({
       {isEdit && <input type="hidden" name="id" value={action.id} />}
       {redirectTo && (
         <input type="hidden" name="redirectTo" value={redirectTo} />
+      )}
+
+      {preselectedEntryPointId && (
+        <input type="hidden" name="entryPointId" value={preselectedEntryPointId} />
+      )}
+      {preselectedApplicationId && (
+        <input
+          type="hidden"
+          name="applicationId"
+          value={preselectedApplicationId}
+        />
+      )}
+      {preselectedInterviewId && (
+        <input
+          type="hidden"
+          name="interviewId"
+          value={preselectedInterviewId}
+        />
       )}
 
       <div className="space-y-2">
@@ -127,7 +145,7 @@ export function ActionForm({
                   <SelectItem key={s} value={s}>
                     {ACTION_STATUS_LABELS[s]}
                   </SelectItem>
-                )
+                ),
               )}
             </SelectContent>
           </Select>
@@ -148,7 +166,7 @@ export function ActionForm({
                   <SelectItem key={p} value={p}>
                     {ACTION_PRIORITY_LABELS[p]}
                   </SelectItem>
-                )
+                ),
               )}
             </SelectContent>
           </Select>

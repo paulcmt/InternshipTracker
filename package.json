@@ -13,9 +13,15 @@
     "start": "next start -H localhost",
     "lint": "eslint",
     "db:generate": "prisma generate",
+    "db:backup": "npx tsx scripts/backup-db.ts",
+    "db:restore:latest": "npx tsx scripts/restore-db.ts",
+    "db:migrate:backup": "npx tsx scripts/migrate-backup-db.ts",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:safe": "npm run db:backup && prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset --force && prisma db seed"
+    "db:seed:safe": "npm run db:backup && prisma db seed",
+    "db:reset": "prisma migrate reset --force && prisma db seed",
+    "db:reset:safe": "npm run db:backup && prisma migrate reset --force && prisma db seed"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.5.0",

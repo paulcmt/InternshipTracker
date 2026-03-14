@@ -14,15 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ROLE_FAMILY_LABELS,
   APPLICATION_TYPE_LABELS,
   APPLICATION_STATUS_LABELS,
 } from "@/lib/utils/enums";
-import type {
-  RoleFamily,
-  ApplicationType,
-  ApplicationStatus,
-} from "@prisma/client";
+import type { ApplicationType, ApplicationStatus } from "@prisma/client";
 import type { Application } from "@prisma/client";
 import type { Company } from "@prisma/client";
 import { createApplication, updateApplication } from "@/app/applications/actions";
@@ -136,36 +131,19 @@ export function ApplicationForm({
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="roleTitle">Titre du poste *</Label>
-          <Input
-            id="roleTitle"
-            name="roleTitle"
-            placeholder="ex: ML Engineer Intern"
-            defaultValue={application?.roleTitle}
-            required
-            aria-invalid={!!errors?.roleTitle}
-          />
-          {errors?.roleTitle && (
-            <p className="text-sm text-destructive">{errors.roleTitle[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="roleFamily">Famille de rôle *</Label>
-          <Select name="roleFamily" defaultValue={application?.roleFamily} required>
-            <SelectTrigger id="roleFamily">
-              <SelectValue placeholder="Sélectionner" />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(ROLE_FAMILY_LABELS) as RoleFamily[]).map((r) => (
-                <SelectItem key={r} value={r}>
-                  {ROLE_FAMILY_LABELS[r]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="roleTitle">Titre du poste *</Label>
+        <Input
+          id="roleTitle"
+          name="roleTitle"
+          placeholder="ex: ML Engineer Intern"
+          defaultValue={application?.roleTitle}
+          required
+          aria-invalid={!!errors?.roleTitle}
+        />
+        {errors?.roleTitle && (
+          <p className="text-sm text-destructive">{errors.roleTitle[0]}</p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -243,31 +221,6 @@ export function ApplicationForm({
             defaultValue={
               application?.appliedAt
                 ? new Date(application.appliedAt).toISOString().slice(0, 10)
-                : ""
-            }
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="nextAction">Prochaine action</Label>
-          <Input
-            id="nextAction"
-            name="nextAction"
-            placeholder="ex: Relancer, Préparer entretien"
-            defaultValue={application?.nextAction ?? ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="nextActionDate">Date prochaine action</Label>
-          <Input
-            id="nextActionDate"
-            name="nextActionDate"
-            type="date"
-            defaultValue={
-              application?.nextActionDate
-                ? new Date(application.nextActionDate).toISOString().slice(0, 10)
                 : ""
             }
           />

@@ -49,18 +49,15 @@ const HIGH_INTEREST_THRESHOLD = 7;
 export default async function DashboardPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
   const [
     totalCompanies,
     totalApplicationsSent,
     totalInterviews,
-    actionsDueTodayOrOverdue,
-    companiesNearestDeadlines,
+    upcomingActions,
     highInterestNotAdvanced,
-    entryPointsFollowUp,
-    applicationsWithActions,
+    entryPointActionsFollowUp,
+    applicationActionsFollowUp,
     upcomingInterviews,
   ] = await Promise.all([
     prisma.company.count(),
@@ -68,29 +65,16 @@ export default async function DashboardPage() {
       where: { status: { in: SENT_APPLICATION_STATUSES } },
     }),
     prisma.interview.count(),
+    // Upcoming actions: open only (exclude DONE, CANCELED), due today or in the future, by dueDate asc
     prisma.action.findMany({
       where: {
         status: { in: ["TODO", "IN_PROGRESS"] },
-        OR: [
-          { dueDate: { lt: today } },
-          { dueDate: { gte: today, lt: tomorrow } },
-        ],
+        dueDate: { gte: today },
       },
       orderBy: [{ dueDate: "asc" }, { priority: "desc" }],
       take: 10,
       include: {
         company: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.company.findMany({
-      where: { status: { not: "CLOSED" } },
-      orderBy: [{ deadline: "asc" }],
-      take: 8,
-      select: {
-        id: true,
-        name: true,
-        deadline: true,
-        personalInterest: true,
       },
     }),
     prisma.company.findMany({
@@ -107,28 +91,40 @@ export default async function DashboardPage() {
         _count: { select: { entryPoints: true } },
       },
     }),
-    prisma.entryPoint.findMany({
+    prisma.action.findMany({
       where: {
-        status: { not: "CLOSED" },
-        nextActionDate: { not: null },
+        status: { in: ["TODO", "IN_PROGRESS"] },
+        dueDate: { not: null },
+        entryPointId: { not: null },
       },
-      orderBy: { nextActionDate: "asc" },
+      orderBy: { dueDate: "asc" },
       take: 8,
       include: {
-        company: { select: { id: true, name: true } },
+        entryPoint: {
+          include: {
+            company: { select: { id: true, name: true } },
+          },
+        },
       },
     }),
-    prisma.application.findMany({
+    prisma.action.findMany({
       where: {
-        status: {
-          notIn: ["REJECTED", "OFFER", "WITHDRAWN"],
+        status: { in: ["TODO", "IN_PROGRESS"] },
+        dueDate: { not: null },
+        application: {
+          status: {
+            notIn: ["REJECTED", "OFFER", "WITHDRAWN"],
+          },
         },
-        nextActionDate: { not: null },
       },
-      orderBy: { nextActionDate: "asc" },
+      orderBy: { dueDate: "asc" },
       take: 8,
       include: {
-        company: { select: { id: true, name: true } },
+        application: {
+          include: {
+            company: { select: { id: true, name: true } },
+          },
+        },
       },
     }),
     prisma.interview.findMany({
@@ -164,25 +160,25 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* 1. Actions due today or overdue — main execution block */}
+          {/* 1. Upcoming actions: open only, due today or later, sorted by dueDate asc */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
-                Actions dues aujourd&apos;hui ou en retard
+                Actions à venir
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Priorité immédiate
+                Prochaines échéances (à faire ou en cours, date aujourd&apos;hui ou ultérieure)
               </p>
             </CardHeader>
             <CardContent>
-              {actionsDueTodayOrOverdue.length === 0 ? (
+              {upcomingActions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Aucune action urgente.
+                  Aucune action à venir.
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {actionsDueTodayOrOverdue.map((a) => {
-                    const overdue = a.dueDate && a.dueDate < today;
+                  {upcomingActions.map((a) => {
+                    const imminent = a.dueDate && isUpcomingIn7Days(a.dueDate);
                     return (
                       <li
                         key={a.id}
@@ -203,13 +199,12 @@ export default async function DashboardPage() {
                             {a.dueDate && (
                               <span
                                 className={
-                                  overdue
-                                    ? "ml-2 font-medium text-destructive"
-                                    : "ml-2 font-medium text-amber-600 dark:text-amber-500"
+                                  imminent
+                                    ? "ml-2 font-medium text-amber-600 dark:text-amber-500"
+                                    : "ml-2 text-muted-foreground"
                                 }
                               >
                                 {formatDateFr(a.dueDate)}
-                                {overdue && " (en retard)"}
                               </span>
                             )}
                           </span>
@@ -225,63 +220,6 @@ export default async function DashboardPage() {
                 className="mt-3 flex items-center text-sm text-muted-foreground hover:text-foreground"
               >
                 Voir toutes les actions <ChevronRight className="size-4" />
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Companies with nearest deadlines */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                Échéances entreprises
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {companiesNearestDeadlines.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aucune échéance à afficher.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {companiesNearestDeadlines.map((c) => {
-                    const overdue = isOverdue(c.deadline);
-                    const imminent = isUpcomingIn7Days(c.deadline);
-                    return (
-                      <li key={c.id}>
-                        <Link
-                          href={`/companies/${c.id}`}
-                          className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
-                        >
-                          <span>
-                            {c.name}
-                            {c.deadline && (
-                              <span
-                                className={
-                                  overdue
-                                    ? " ml-2 font-medium text-destructive"
-                                    : imminent
-                                      ? " ml-2 font-medium text-amber-600 dark:text-amber-500"
-                                      : " ml-2 text-muted-foreground"
-                                }
-                              >
-                                — {formatDateFr(c.deadline)}
-                                {overdue && " (en retard)"}
-                                {imminent && !overdue && " (proche)"}
-                              </span>
-                            )}
-                          </span>
-                          <ChevronRight className="size-4 text-muted-foreground" />
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <Link
-                href="/companies"
-                className="mt-3 flex items-center text-sm text-muted-foreground hover:text-foreground"
-              >
-                Voir toutes les entreprises <ChevronRight className="size-4" />
               </Link>
             </CardContent>
           </Card>
@@ -331,7 +269,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* 3. Entry points needing follow-up */}
+          {/* 3. Entry points needing follow-up (via linked actions) */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
@@ -342,15 +280,18 @@ export default async function DashboardPage() {
               </p>
             </CardHeader>
             <CardContent>
-              {entryPointsFollowUp.length === 0 ? (
+              {entryPointActionsFollowUp.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Aucun suivi planifié.
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {entryPointsFollowUp.map((ep) => {
-                    const overdue = isOverdue(ep.nextActionDate);
-                    const imminent = isUpcomingIn7Days(ep.nextActionDate);
+                  {entryPointActionsFollowUp.map((a) => {
+                    const ep = a.entryPoint;
+                    if (!ep) return null;
+                    const overdue = a.dueDate && isOverdue(a.dueDate);
+                    const imminent =
+                      a.dueDate && !overdue && isUpcomingIn7Days(a.dueDate);
                     return (
                       <li key={ep.id}>
                         <Link
@@ -362,7 +303,7 @@ export default async function DashboardPage() {
                             <span className="ml-2 text-muted-foreground">
                               — {ENTRY_POINT_STATUS_LABELS[ep.status as EntryPointStatus]}
                             </span>
-                            {ep.nextActionDate && (
+                            {a.dueDate && (
                               <span
                                 className={
                                   overdue
@@ -372,7 +313,12 @@ export default async function DashboardPage() {
                                       : " ml-2 text-muted-foreground"
                                 }
                               >
-                                {formatRelativeDateFr(ep.nextActionDate)}
+                                {formatRelativeDateFr(a.dueDate)}
+                              </span>
+                            )}
+                            {a.title && (
+                              <span className="ml-2 text-muted-foreground">
+                                — {a.title}
                               </span>
                             )}
                           </span>
@@ -392,7 +338,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Applications with upcoming or overdue next actions */}
+          {/* Applications with upcoming or overdue next actions (via linked actions) */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
@@ -403,19 +349,22 @@ export default async function DashboardPage() {
               </p>
             </CardHeader>
             <CardContent>
-              {applicationsWithActions.length === 0 ? (
+              {applicationActionsFollowUp.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Aucune action planifiée.
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {applicationsWithActions.map((app) => {
-                    const overdue = isOverdue(app.nextActionDate);
-                    const imminent = isUpcomingIn7Days(app.nextActionDate);
+                  {applicationActionsFollowUp.map((a) => {
+                    const app = a.application;
+                    if (!app) return null;
+                    const overdue = a.dueDate && isOverdue(a.dueDate);
+                    const imminent =
+                      a.dueDate && !overdue && isUpcomingIn7Days(a.dueDate);
                     return (
                       <li key={app.id}>
                         <Link
-                          href={`/applications/${app.id}/edit`}
+                          href={`/applications/${app.id}`}
                           className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
                         >
                           <span>
@@ -424,7 +373,7 @@ export default async function DashboardPage() {
                               — {app.roleTitle} •{" "}
                               {APPLICATION_STATUS_LABELS[app.status as ApplicationStatus]}
                             </span>
-                            {app.nextActionDate && (
+                            {a.dueDate && (
                               <span
                                 className={
                                   overdue
@@ -434,7 +383,12 @@ export default async function DashboardPage() {
                                       : " ml-2 text-muted-foreground"
                                 }
                               >
-                                {formatRelativeDateFr(app.nextActionDate)}
+                                {formatRelativeDateFr(a.dueDate)}
+                              </span>
+                            )}
+                            {a.title && (
+                              <span className="ml-2 text-muted-foreground">
+                                — {a.title}
                               </span>
                             )}
                           </span>

@@ -26,15 +26,12 @@ async function main() {
   const mistral = await prisma.company.create({
     data: {
       name: "Mistral AI",
-      companyType: "SCALEUP",
       sizeEstimate: "200-500",
       country: "France",
       city: "Paris",
       careersUrl: "https://mistral.ai/careers",
       linkedinUrl: "https://linkedin.com/company/mistral-ai",
-      targetRoles: "ML Engineer, Research Scientist",
       personalInterest: 9,
-      deadline: addDays(now, 14),
       status: "PROCESS_IN_PROGRESS",
       notes: "Priorité haute — stage ML appliqué",
     },
@@ -43,15 +40,12 @@ async function main() {
   const datadog = await prisma.company.create({
     data: {
       name: "Datadog",
-      companyType: "CORPORATE",
       sizeEstimate: "5000+",
       country: "France",
       city: "Paris",
       careersUrl: "https://careers.datadoghq.com",
       linkedinUrl: "https://linkedin.com/company/datadog",
-      targetRoles: "Data Engineer, Software Engineer",
       personalInterest: 7,
-      deadline: addDays(now, -3), // overdue
       status: "FIND_ENTRY_POINT",
       notes: "Deadline dépassée — relancer",
     },
@@ -60,15 +54,12 @@ async function main() {
   const deepmind = await prisma.company.create({
     data: {
       name: "Google DeepMind",
-      companyType: "CORPORATE",
       sizeEstimate: "5000+",
       country: "United Kingdom",
       city: "London",
       careersUrl: "https://deepmind.google/careers",
       linkedinUrl: "https://linkedin.com/company/deepmind",
-      targetRoles: "Research Scientist, ML Engineer",
       personalInterest: 10,
-      deadline: addDays(now, 5),
       status: "PROCESS_IN_PROGRESS",
       notes: "Entretien technique prévu",
     },
@@ -77,15 +68,12 @@ async function main() {
   const openai = await prisma.company.create({
     data: {
       name: "OpenAI",
-      companyType: "SCALEUP",
       sizeEstimate: "500-1000",
       country: "United States",
       city: "San Francisco",
       careersUrl: "https://openai.com/careers",
       linkedinUrl: "https://linkedin.com/company/openai",
-      targetRoles: "Applied AI, Research",
       personalInterest: 10,
-      deadline: addDays(now, 21),
       status: "FIND_ENTRY_POINT",
       notes: "Cible US — visa à prévoir",
     },
@@ -94,15 +82,12 @@ async function main() {
   const g42 = await prisma.company.create({
     data: {
       name: "G42",
-      companyType: "CORPORATE",
       sizeEstimate: "1000-5000",
       country: "United Arab Emirates",
       city: "Abu Dhabi",
       careersUrl: "https://g42.ai/careers",
       linkedinUrl: "https://linkedin.com/company/g42",
-      targetRoles: "AI Engineer, Data Science",
       personalInterest: 6,
-      deadline: addDays(now, 7),
       status: "PROCESS_IN_PROGRESS",
       notes: "Programme stage international",
     },
@@ -111,15 +96,12 @@ async function main() {
   const huggingface = await prisma.company.create({
     data: {
       name: "Hugging Face",
-      companyType: "SCALEUP",
       sizeEstimate: "200-500",
       country: "France",
       city: "Paris",
       careersUrl: "https://huggingface.co/jobs",
       linkedinUrl: "https://linkedin.com/company/huggingface",
-      targetRoles: "ML Engineer, Developer Advocate",
       personalInterest: 8,
-      deadline: addDays(now, -7), // overdue
       status: "CLOSED",
       notes: "Refus — réessayer plus tard",
     },
@@ -133,11 +115,8 @@ async function main() {
       personName: "Marie Dupont",
       personRole: "Tech Recruiter",
       linkedinUrl: "https://linkedin.com/in/marie-dupont",
-      email: "marie.dupont@mistral.ai",
       channel: "LinkedIn",
       status: "CONTACTED",
-      nextAction: "Relancer si pas de réponse",
-      nextActionDate: addDays(now, 3),
       notes: "Contact établi via LinkedIn",
     },
   });
@@ -147,8 +126,6 @@ async function main() {
       companyId: mistral.id,
       type: "JOB_POSTING",
       status: "TO_CONTACT",
-      nextAction: "Postuler via careers",
-      nextActionDate: addDays(now, 1),
       notes: "Offre ML Intern 2025",
     },
   });
@@ -162,8 +139,6 @@ async function main() {
       linkedinUrl: "https://linkedin.com/in/thomas-martin",
       channel: "LinkedIn",
       status: "TO_CONTACT",
-      nextAction: "Demander referral",
-      nextActionDate: addDays(now, -2), // overdue
       notes: "Ancien de mon école",
     },
   });
@@ -175,8 +150,6 @@ async function main() {
       personName: "Dr. Sarah Chen",
       personRole: "Research Scientist",
       status: "RESPONDED",
-      nextAction: "Préparer entretien",
-      nextActionDate: addDays(now, 2),
       notes: "Referral obtenu",
     },
   });
@@ -186,8 +159,19 @@ async function main() {
       companyId: openai.id,
       type: "COLD_APPLICATION",
       status: "TO_CONTACT",
-      nextAction: "Candidature spontanée",
-      nextActionDate: addDays(now, 10),
+    },
+  });
+
+  await prisma.entryPoint.create({
+    data: {
+      companyId: huggingface.id,
+      type: "EMPLOYEE",
+      personName: "Léa Bernard",
+      personRole: "ML Engineer",
+      linkedinUrl: "https://linkedin.com/in/lea-bernard",
+      channel: "LinkedIn",
+      status: "TO_CONTACT",
+      notes: "Contact employé via alumni",
     },
   });
 
@@ -197,14 +181,11 @@ async function main() {
       companyId: mistral.id,
       entryPointId: epMistralRecruiter.id,
       roleTitle: "ML Engineering Intern",
-      roleFamily: "ML_ENGINEERING",
       location: "Paris",
       offerUrl: "https://mistral.ai/careers/intern-ml",
       applicationType: "REFERRAL",
       appliedAt: addDays(now, -10),
       status: "TECHNICAL_INTERVIEW",
-      nextAction: "Entretien technique vendredi",
-      nextActionDate: addDays(now, 4),
       notes: "Bonne avancée",
     },
   });
@@ -214,12 +195,9 @@ async function main() {
       companyId: mistral.id,
       entryPointId: epMistralJob.id,
       roleTitle: "Research Intern",
-      roleFamily: "APPLIED_AI",
       location: "Paris",
       applicationType: "CAREERS_SITE",
       status: "PREPARATION",
-      nextAction: "Finaliser CV et lettre",
-      nextActionDate: addDays(now, 1),
     },
   });
 
@@ -227,13 +205,10 @@ async function main() {
     data: {
       companyId: datadog.id,
       roleTitle: "Data Engineering Intern",
-      roleFamily: "DATA_ENGINEERING",
       location: "Paris",
       applicationType: "COLD_APPLICATION",
       status: "SENT",
       appliedAt: addDays(now, -15),
-      nextAction: "Relancer",
-      nextActionDate: addDays(now, -5), // overdue
       notes: "Pas de réponse depuis 2 semaines",
     },
   });
@@ -242,13 +217,10 @@ async function main() {
     data: {
       companyId: deepmind.id,
       roleTitle: "Research Scientist Intern",
-      roleFamily: "ML_ENGINEERING",
       location: "London",
       applicationType: "REFERRAL",
       appliedAt: addDays(now, -7),
       status: "HR_INTERVIEW",
-      nextAction: "Entretien RH",
-      nextActionDate: addDays(now, 2),
     },
   });
 
@@ -256,7 +228,6 @@ async function main() {
     data: {
       companyId: huggingface.id,
       roleTitle: "ML Engineer Intern",
-      roleFamily: "SOFTWARE_ENGINEERING",
       applicationType: "CAREERS_SITE",
       appliedAt: addDays(now, -30),
       status: "REJECTED",

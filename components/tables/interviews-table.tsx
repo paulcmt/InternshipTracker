@@ -145,7 +145,7 @@ export function InterviewsTable({
                   </TableCell>
                   <TableCell>
                     <Link
-                      href={`/applications/${int.application.id}/edit`}
+                      href={`/applications/${int.application.id}`}
                       className="hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >

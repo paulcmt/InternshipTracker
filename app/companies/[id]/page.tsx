@@ -39,9 +39,23 @@ export default async function CompanyDetailPage({
   const company = await prisma.company.findUnique({
     where: { id },
     include: {
-      entryPoints: true,
+      entryPoints: {
+        include: {
+          actions: {
+            where: { status: { in: ["TODO", "IN_PROGRESS"] } },
+            orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+          },
+        },
+      },
       applications: {
-        include: { interviews: true, entryPoint: true },
+        include: {
+          interviews: true,
+          entryPoint: true,
+          actions: {
+            where: { status: { in: ["TODO", "IN_PROGRESS"] } },
+            orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+          },
+        },
       },
       interviews: { include: { application: true } },
       actions: true,
@@ -49,9 +63,6 @@ export default async function CompanyDetailPage({
   });
 
   if (!company) notFound();
-
-  const deadlineOverdue = isOverdue(company.deadline);
-  const deadlineImminent = isUpcomingIn7Days(company.deadline);
 
   return (
     <PageLayout>
@@ -70,7 +81,7 @@ export default async function CompanyDetailPage({
           </Button>
         </PageHeader>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           {/* Informations générales */}
           <Card>
             <CardHeader>
@@ -94,10 +105,6 @@ export default async function CompanyDetailPage({
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-muted-foreground">Type</span>
-                  <p className="font-medium">{company.companyType}</p>
-                </div>
-                <div>
                   <span className="text-sm text-muted-foreground">Taille</span>
                   <p className="font-medium">{company.sizeEstimate ?? "—"}</p>
                 </div>
@@ -106,30 +113,6 @@ export default async function CompanyDetailPage({
                     Intérêt personnel
                   </span>
                   <p className="font-medium">{company.personalInterest}/10</p>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">
-                    Date limite
-                  </span>
-                  <p
-                    className={
-                      deadlineOverdue
-                        ? "font-medium text-destructive"
-                        : deadlineImminent
-                          ? "font-medium text-amber-600 dark:text-amber-500"
-                          : ""
-                    }
-                  >
-                    {company.deadline
-                      ? `${formatDateFr(company.deadline)}${deadlineOverdue ? " (en retard)" : deadlineImminent ? " (proche)" : ""}`
-                      : "—"}
-                  </p>
-                </div>
-                <div className="sm:col-span-2">
-                  <span className="text-sm text-muted-foreground">
-                    Rôles cibles
-                  </span>
-                  <p className="font-medium">{company.targetRoles}</p>
                 </div>
                 {company.careersUrl && (
                   <div>
@@ -166,13 +149,25 @@ export default async function CompanyDetailPage({
                   </div>
                 )}
               </div>
+              <div>
+                <span className="text-sm text-muted-foreground">Note</span>
+                <p className="mt-1 text-sm">
+                  {company.notes ? (
+                    <span className="whitespace-pre-wrap">{company.notes}</span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Aucune note pour le moment
+                    </span>
+                  )}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Actions liées */}
+          {/* Historique des actions */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Actions liées</CardTitle>
+              <CardTitle>Historique des actions</CardTitle>
               <Button asChild variant="outline" size="sm">
                 <Link href={`/actions/new?companyId=${company.id}`}>
                   <Plus className="size-4" />
@@ -184,11 +179,10 @@ export default async function CompanyDetailPage({
               {company.actions.length > 0 ? (
                 <ul className="space-y-3">
                   {company.actions
-                    .filter((a) => a.status !== "CANCELED")
                     .sort((a, b) => {
-                      const aDate = a.dueDate?.getTime() ?? Infinity;
-                      const bDate = b.dueDate?.getTime() ?? Infinity;
-                      return aDate - bDate;
+                      return (
+                        b.createdAt.getTime() - a.createdAt.getTime()
+                      );
                     })
                     .map((a) => {
                       const overdue =
@@ -206,13 +200,31 @@ export default async function CompanyDetailPage({
                           key={a.id}
                           className="flex items-center justify-between rounded-md border p-3"
                         >
-                          <div className="flex-1">
+                          <div className="flex-1 space-y-1">
                             <p className="font-medium">{a.title}</p>
-                            <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                              <span>
-                                {ACTION_STATUS_LABELS[a.status]} •{" "}
-                                {ACTION_PRIORITY_LABELS[a.priority]}
-                              </span>
+                            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                              <StatusBadge
+                                label={ACTION_STATUS_LABELS[a.status]}
+                                variant={
+                                  a.status === "DONE"
+                                    ? "secondary"
+                                    : a.status === "IN_PROGRESS"
+                                      ? "default"
+                                      : a.status === "CANCELED"
+                                        ? "outline"
+                                        : "outline"
+                                }
+                              />
+                              <StatusBadge
+                                label={ACTION_PRIORITY_LABELS[a.priority]}
+                                variant={
+                                  a.priority === "HIGH"
+                                    ? "destructive"
+                                    : a.priority === "MEDIUM"
+                                      ? "default"
+                                      : "secondary"
+                                }
+                              />
                               {a.dueDate && (
                                 <span
                                   className={
@@ -227,6 +239,16 @@ export default async function CompanyDetailPage({
                                   {overdue && " (en retard)"}
                                   {imminent && !overdue && " (proche)"}
                                 </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Créée le {formatDateTimeFr(a.createdAt)}
+                              {a.completedAt && (
+                                <>
+                                  {" "}
+                                  • Terminée le{" "}
+                                  {formatDateTimeFr(a.completedAt)}
+                                </>
                               )}
                             </p>
                           </div>
@@ -256,22 +278,9 @@ export default async function CompanyDetailPage({
             </CardContent>
           </Card>
 
-          {/* Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {company.notes ? (
-                <p className="whitespace-pre-wrap text-sm">{company.notes}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Aucune note pour le moment.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+        </div>
 
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Points d'entrée liés */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -289,8 +298,12 @@ export default async function CompanyDetailPage({
               {company.entryPoints.length > 0 ? (
                 <ul className="space-y-3">
                   {company.entryPoints.map((ep) => {
-                    const epOverdue = isOverdue(ep.nextActionDate);
-                    const epImminent = isUpcomingIn7Days(ep.nextActionDate);
+                    const nextAction = ep.actions[0];
+                    const epOverdue = nextAction?.dueDate && isOverdue(nextAction.dueDate);
+                    const epImminent =
+                      nextAction?.dueDate &&
+                      !epOverdue &&
+                      isUpcomingIn7Days(nextAction.dueDate);
                     return (
                       <li
                         key={ep.id}
@@ -303,9 +316,8 @@ export default async function CompanyDetailPage({
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {ENTRY_POINT_STATUS_LABELS[ep.status]}
-                            {ep.nextAction &&
-                              ` • ${ep.nextAction}`}
-                            {ep.nextActionDate && (
+                            {nextAction?.title && ` • ${nextAction.title}`}
+                            {nextAction?.dueDate && (
                               <span
                                 className={
                                   epOverdue
@@ -316,7 +328,7 @@ export default async function CompanyDetailPage({
                                 }
                               >
                                 {" "}
-                                • {formatDateFr(ep.nextActionDate)}
+                                • {formatDateFr(nextAction.dueDate)}
                                 {epOverdue && " (en retard)"}
                                 {epImminent && !epOverdue && " (proche)"}
                               </span>
@@ -370,15 +382,27 @@ export default async function CompanyDetailPage({
               {company.applications.length > 0 ? (
                 <ul className="space-y-3">
                   {company.applications.map((app) => {
-                    const appOverdue = isOverdue(app.nextActionDate);
-                    const appImminent = isUpcomingIn7Days(app.nextActionDate);
+                    const nextAction = app.actions[0];
+                    const appOverdue =
+                      nextAction?.dueDate && isOverdue(nextAction.dueDate);
+                    const appImminent =
+                      nextAction?.dueDate &&
+                      !appOverdue &&
+                      isUpcomingIn7Days(nextAction.dueDate);
                     return (
                       <li
                         key={app.id}
                         className="flex items-center justify-between rounded-md border p-3"
                       >
                         <div className="flex-1">
-                          <p className="font-medium">{app.roleTitle}</p>
+                          <p className="font-medium">
+                            <Link
+                              href={`/applications/${app.id}`}
+                              className="hover:underline"
+                            >
+                              {app.roleTitle}
+                            </Link>
+                          </p>
                           <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                             <StatusBadge
                               label={APPLICATION_STATUS_LABELS[app.status]}
@@ -388,8 +412,8 @@ export default async function CompanyDetailPage({
                               `${ENTRY_POINT_TYPE_LABELS[app.entryPoint.type]}`}
                             {app.appliedAt &&
                               `Envoyée le ${formatDateFr(app.appliedAt)}`}
-                            {app.nextAction && app.nextAction}
-                            {app.nextActionDate && (
+                            {nextAction?.title && nextAction.title}
+                            {nextAction?.dueDate && (
                               <span
                                 className={
                                   appOverdue
@@ -399,7 +423,7 @@ export default async function CompanyDetailPage({
                                       : ""
                                 }
                               >
-                                {formatDateFr(app.nextActionDate)}
+                                {formatDateFr(nextAction.dueDate)}
                                 {appOverdue && " (en retard)"}
                                 {appImminent && !appOverdue && " (proche)"}
                               </span>
@@ -431,7 +455,9 @@ export default async function CompanyDetailPage({
               )}
             </CardContent>
           </Card>
+        </div>
 
+        <div className="grid gap-6">
           {/* Entretiens liés */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -479,7 +505,7 @@ export default async function CompanyDetailPage({
                             )}
                             {int.application && (
                               <Link
-                                href={`/applications/${int.application.id}/edit`}
+                                href={`/applications/${int.application.id}`}
                                 className="hover:underline"
                               >
                                 {int.application.roleTitle}

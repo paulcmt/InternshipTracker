@@ -29,7 +29,7 @@ async function EntryPointsContent({
   const status = params.status;
   const type = params.type;
   const companyId = params.companyId;
-  const sort = params.sort ?? "nextActionDate";
+  const sort = params.sort ?? "createdAt";
   const order = (params.order === "desc" ? "desc" : "asc") as "asc" | "desc";
 
   const where: Prisma.EntryPointWhereInput = {};
@@ -51,14 +51,12 @@ async function EntryPointsContent({
   }
 
   const orderBy: Prisma.EntryPointOrderByWithRelationInput = {};
-  if (sort === "nextActionDate") {
-    orderBy.nextActionDate = order;
-  } else if (sort === "status") {
+  if (sort === "status") {
     orderBy.status = order;
   } else if (sort === "createdAt") {
     orderBy.createdAt = order;
   } else {
-    orderBy.nextActionDate = "asc";
+    orderBy.createdAt = "asc";
   }
 
   const [entryPoints, companies] = await Promise.all([

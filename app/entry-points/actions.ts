@@ -10,7 +10,6 @@ import {
 import type { EntryPointStatus, EntryPointType } from "@prisma/client";
 
 function formDataToEntryPoint(data: FormData) {
-  const nextActionDateVal = data.get("nextActionDate") as string;
   return {
     companyId: data.get("companyId") as string,
     type: data.get("type") as EntryPointType,
@@ -20,8 +19,6 @@ function formDataToEntryPoint(data: FormData) {
     email: (data.get("email") as string) || undefined,
     channel: (data.get("channel") as string) || undefined,
     status: data.get("status") as EntryPointStatus,
-    nextAction: (data.get("nextAction") as string) || undefined,
-    nextActionDate: nextActionDateVal || undefined,
     notes: (data.get("notes") as string) || undefined,
   };
 }
@@ -33,10 +30,7 @@ export async function createEntryPoint(_prev: unknown, formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors };
   }
   const entry = await prisma.entryPoint.create({
-    data: {
-      ...parsed.data,
-      nextActionDate: parsed.data.nextActionDate ?? undefined,
-    },
+    data: parsed.data,
   });
   revalidatePath("/entry-points");
   revalidatePath(`/companies/${entry.companyId}`);
@@ -52,11 +46,7 @@ export async function updateEntryPoint(_prev: unknown, formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) return { error: { id: ["ID manquant"] } };
   const raw = formDataToEntryPoint(formData);
-  const data = {
-    ...raw,
-    nextActionDate: raw.nextActionDate === "" ? null : raw.nextActionDate,
-  };
-  const parsed = entryPointUpdateSchema.safeParse(data);
+  const parsed = entryPointUpdateSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }

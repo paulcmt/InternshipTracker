@@ -13,7 +13,6 @@ import type { Prisma } from "@prisma/client";
 type SearchParams = Promise<{
   search?: string;
   status?: string;
-  roleFamily?: string;
   applicationType?: string;
   companyId?: string;
   sort?: string;
@@ -28,10 +27,9 @@ async function ApplicationsContent({
   const params = await searchParams;
   const search = params.search?.trim() ?? "";
   const status = params.status;
-  const roleFamily = params.roleFamily;
   const applicationType = params.applicationType;
   const companyId = params.companyId;
-  const sort = params.sort ?? "nextActionDate";
+  const sort = params.sort ?? "appliedAt";
   const order = (params.order === "desc" ? "desc" : "asc") as "asc" | "desc";
 
   const where: Prisma.ApplicationWhereInput = {};
@@ -45,9 +43,6 @@ async function ApplicationsContent({
   if (status) {
     where.status = status as Prisma.EnumApplicationStatusFilter;
   }
-  if (roleFamily) {
-    where.roleFamily = roleFamily as Prisma.EnumRoleFamilyFilter;
-  }
   if (applicationType) {
     where.applicationType =
       applicationType as Prisma.EnumApplicationTypeFilter;
@@ -57,16 +52,14 @@ async function ApplicationsContent({
   }
 
   const orderBy: Prisma.ApplicationOrderByWithRelationInput = {};
-  if (sort === "nextActionDate") {
-    orderBy.nextActionDate = order;
-  } else if (sort === "appliedAt") {
+  if (sort === "appliedAt") {
     orderBy.appliedAt = order;
   } else if (sort === "status") {
     orderBy.status = order;
   } else if (sort === "createdAt") {
     orderBy.createdAt = order;
   } else {
-    orderBy.nextActionDate = "asc";
+    orderBy.appliedAt = "asc";
   }
 
   const [applications, companies] = await Promise.all([
@@ -91,7 +84,6 @@ async function ApplicationsContent({
       <ApplicationsFilters
         search={search}
         status={status}
-        roleFamily={roleFamily}
         applicationType={applicationType}
         companyId={companyId}
         companies={companies}

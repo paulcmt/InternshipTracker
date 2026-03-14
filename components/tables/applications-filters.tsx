@@ -13,12 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import {
-  ROLE_FAMILY_LABELS,
   APPLICATION_TYPE_LABELS,
   APPLICATION_STATUS_LABELS,
 } from "@/lib/utils/enums";
 import type {
-  RoleFamily,
   ApplicationType,
   ApplicationStatus,
 } from "@prisma/client";
@@ -26,7 +24,6 @@ import type {
 interface ApplicationsFiltersProps {
   search: string;
   status?: string;
-  roleFamily?: string;
   applicationType?: string;
   companyId?: string;
 }
@@ -39,7 +36,6 @@ interface CompaniesForFilter {
 export function ApplicationsFilters({
   search,
   status,
-  roleFamily,
   applicationType,
   companyId,
   companies = [],
@@ -48,7 +44,7 @@ export function ApplicationsFilters({
     useFilterParams("/applications");
 
   const hasFilters =
-    search || status || roleFamily || applicationType || companyId;
+    search || status || applicationType || companyId;
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border p-4">
@@ -87,25 +83,6 @@ export function ApplicationsFilters({
                   </SelectItem>
                 )
               )}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Famille de rôle</Label>
-          <Select
-            value={roleFamily || "all"}
-            onValueChange={(v) => setParam("roleFamily", v === "all" ? undefined : v)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Toutes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes</SelectItem>
-              {(Object.keys(ROLE_FAMILY_LABELS) as RoleFamily[]).map((r) => (
-                <SelectItem key={r} value={r}>
-                  {ROLE_FAMILY_LABELS[r]}
-                </SelectItem>
-              ))}
             </SelectContent>
           </Select>
         </div>

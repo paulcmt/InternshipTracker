@@ -12,33 +12,19 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
-import {
-  COMPANY_STATUS_LABELS,
-  COMPANY_TYPES,
-  COMPANY_TYPE_LABELS,
-} from "@/lib/utils/enums";
+import { COMPANY_STATUS_LABELS } from "@/lib/utils/enums";
 import type { CompanyStatus } from "@prisma/client";
-const DEADLINE_PROXIMITY_OPTIONS = [
-  { value: "all", label: "Toutes" },
-  { value: "overdue", label: "En retard" },
-  { value: "imminent", label: "Prochaines 7 jours" },
-  { value: "none", label: "Sans date" },
-];
 
 interface CompaniesFiltersProps {
   search: string;
   status?: string;
-  companyType?: string;
   personalInterest?: number;
-  deadlineProximity?: string;
 }
 
 export function CompaniesFilters({
   search,
   status,
-  companyType,
   personalInterest,
-  deadlineProximity,
 }: CompaniesFiltersProps) {
   const { setParam, clearFilters, applySearch, searchRef } =
     useFilterParams("/companies");
@@ -46,9 +32,7 @@ export function CompaniesFilters({
   const hasFilters =
     search ||
     status ||
-    companyType ||
-    (personalInterest != null && !isNaN(personalInterest)) ||
-    deadlineProximity;
+    (personalInterest != null && !isNaN(personalInterest));
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border p-4">
@@ -89,25 +73,6 @@ export function CompaniesFilters({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Type</Label>
-          <Select
-            value={companyType || "all"}
-            onValueChange={(v) => setParam("companyType", v === "all" ? undefined : v)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Tous" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
-              {COMPANY_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {COMPANY_TYPE_LABELS[t]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
           <Label>Intérêt</Label>
           <Select
             value={
@@ -127,26 +92,6 @@ export function CompaniesFilters({
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                 <SelectItem key={n} value={String(n)}>
                   {n}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Date limite</Label>
-          <Select
-            value={deadlineProximity || "all"}
-            onValueChange={(v) =>
-              setParam("deadlineProximity", v === "all" ? undefined : v)
-            }
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Toutes" />
-            </SelectTrigger>
-            <SelectContent>
-              {DEADLINE_PROXIMITY_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
                 </SelectItem>
               ))}
             </SelectContent>

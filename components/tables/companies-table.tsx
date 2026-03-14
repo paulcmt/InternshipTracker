@@ -18,8 +18,6 @@ import { EmptyState } from "@/components/empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Building2, Pencil, Trash2 } from "lucide-react";
 import { COMPANY_STATUS_LABELS } from "@/lib/utils/enums";
-import { formatDateFr } from "@/lib/utils/date";
-import { isOverdue, isUpcomingIn7Days } from "@/lib/utils/dates";
 import { deleteCompany } from "@/app/companies/actions";
 import { useState } from "react";
 import type { CompanyStatus } from "@prisma/client";
@@ -27,11 +25,9 @@ import type { CompanyStatus } from "@prisma/client";
 type CompanyWithCount = {
   id: string;
   name: string;
-  companyType: string;
   country: string;
   city: string | null;
   personalInterest: number;
-  deadline: Date | null;
   status: CompanyStatus;
   _count: { entryPoints: number; applications: number };
 };
@@ -114,22 +110,26 @@ export function CompaniesTable({
                 onSort={handleSort}
               />
               <SortableTableHead
-                columnKey="deadline"
-                label="Date limite"
+                columnKey="entryPoints"
+                label="Points d'entrée"
                 currentSort={sort}
                 currentOrder={order}
                 onSort={handleSort}
+                className="text-center"
               />
-              <TableHead className="text-center">Points</TableHead>
-              <TableHead className="text-center">Candidatures</TableHead>
+              <SortableTableHead
+                columnKey="applications"
+                label="Candidatures"
+                currentSort={sort}
+                currentOrder={order}
+                onSort={handleSort}
+                className="text-center"
+              />
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {companies.map((company) => {
-              const overdue = isOverdue(company.deadline);
-              const imminent = isUpcomingIn7Days(company.deadline);
-              return (
+            {companies.map((company) => (
                 <TableRow
                   key={company.id}
                   className="cursor-pointer"
@@ -157,25 +157,6 @@ export function CompaniesTable({
                     />
                   </TableCell>
                   <TableCell>{company.personalInterest}/10</TableCell>
-                  <TableCell>
-                    {company.deadline ? (
-                      <span
-                        className={
-                          overdue
-                            ? "font-medium text-destructive"
-                            : imminent
-                              ? "font-medium text-amber-600 dark:text-amber-500"
-                              : ""
-                        }
-                      >
-                        {formatDateFr(company.deadline)}
-                        {overdue && " (en retard)"}
-                        {imminent && !overdue && " (proche)"}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
                   <TableCell className="text-center">
                     {company._count.entryPoints}
                   </TableCell>
@@ -210,8 +191,7 @@ export function CompaniesTable({
                     </div>
                   </TableCell>
                 </TableRow>
-              );
-            })}
+            ))}
           </TableBody>
         </Table>
       </div>

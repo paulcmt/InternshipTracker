@@ -38,9 +38,16 @@ yarn-error.log*
 *.db
 *.db-journal
 
+# DB backups (local safety copies)
+prisma/backups/
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cursor
+.cursor/
+.rtk/

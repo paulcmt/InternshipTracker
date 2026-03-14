@@ -19,27 +19,20 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FileText, Pencil, Trash2 } from "lucide-react";
 import {
   APPLICATION_STATUS_LABELS,
-  ROLE_FAMILY_LABELS,
   ENTRY_POINT_TYPE_LABELS,
 } from "@/lib/utils/enums";
-import { formatDateFr } from "@/lib/utils/date";
-import { isOverdue, isUpcomingIn7Days } from "@/lib/utils/dates";
 import { deleteApplication } from "@/app/applications/actions";
 import { useState } from "react";
 import type {
   ApplicationStatus,
-  RoleFamily,
   EntryPointType,
 } from "@prisma/client";
 
 type ApplicationWithRelations = {
   id: string;
   roleTitle: string;
-  roleFamily: RoleFamily;
   status: ApplicationStatus;
   appliedAt: Date | null;
-  nextAction: string | null;
-  nextActionDate: Date | null;
   company: { id: string; name: string };
   entryPoint: {
     id: string;
@@ -115,7 +108,6 @@ export function ApplicationsTable({
             <TableRow>
               <TableHead>Entreprise</TableHead>
               <TableHead>Poste</TableHead>
-              <TableHead>Famille</TableHead>
               <SortableTableHead
                 columnKey="status"
                 label="Statut"
@@ -124,76 +116,44 @@ export function ApplicationsTable({
                 onSort={handleSort}
               />
               <TableHead>Point d&apos;entrée</TableHead>
-              <TableHead>Prochaine action</TableHead>
-              <SortableTableHead
-                columnKey="nextActionDate"
-                label="Date"
-                currentSort={sort}
-                currentOrder={order}
-                onSort={handleSort}
-              />
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {applications.map((app) => {
-              const overdue = isOverdue(app.nextActionDate);
-              const imminent = isUpcomingIn7Days(app.nextActionDate);
-              return (
-                <TableRow
-                  key={app.id}
-                  className="cursor-pointer"
-                  onClick={() => router.push(`/companies/${app.company.id}`)}
-                >
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/companies/${app.company.id}`}
-                      className="hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {app.company.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{app.roleTitle}</TableCell>
-                  <TableCell>{ROLE_FAMILY_LABELS[app.roleFamily]}</TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      label={APPLICATION_STATUS_LABELS[app.status]}
-                      variant={getStatusVariant(app.status)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {app.entryPoint ? (
-                      <span className="text-sm">
-                        {ENTRY_POINT_TYPE_LABELS[app.entryPoint.type]}
-                        {app.entryPoint.personName &&
-                          ` — ${app.entryPoint.personName}`}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{app.nextAction ?? "—"}</TableCell>
-                  <TableCell>
-                    {app.nextActionDate ? (
-                      <span
-                        className={
-                          overdue
-                            ? "font-medium text-destructive"
-                            : imminent
-                              ? "font-medium text-amber-600 dark:text-amber-500"
-                              : ""
-                        }
-                      >
-                        {formatDateFr(app.nextActionDate)}
-                        {overdue && " (en retard)"}
-                        {imminent && !overdue && " (proche)"}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+            {applications.map((app) => (
+              <TableRow
+                key={app.id}
+                className="cursor-pointer"
+                onClick={() => router.push(`/applications/${app.id}`)}
+              >
+                <TableCell className="font-medium">
+                  <Link
+                    href={`/applications/${app.id}`}
+                    className="hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {app.company.name}
+                  </Link>
+                </TableCell>
+                <TableCell>{app.roleTitle}</TableCell>
+                <TableCell>
+                  <StatusBadge
+                    label={APPLICATION_STATUS_LABELS[app.status]}
+                    variant={getStatusVariant(app.status)}
+                  />
+                </TableCell>
+                <TableCell>
+                  {app.entryPoint ? (
+                    <span className="text-sm">
+                      {ENTRY_POINT_TYPE_LABELS[app.entryPoint.type]}
+                      {app.entryPoint.personName &&
+                        ` — ${app.entryPoint.personName}`}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -201,7 +161,10 @@ export function ApplicationsTable({
                         className="size-8"
                         asChild
                       >
-                        <Link href={`/applications/${app.id}/edit`}>
+                        <Link
+                          href={`/applications/${app.id}/edit`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Pencil className="size-4" />
                           <span className="sr-only">Modifier</span>
                         </Link>
@@ -221,8 +184,7 @@ export function ApplicationsTable({
                     </div>
                   </TableCell>
                 </TableRow>
-              );
-            })}
+            ))}
           </TableBody>
         </Table>
       </div>
